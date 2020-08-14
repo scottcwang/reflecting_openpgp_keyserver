@@ -11,13 +11,15 @@ async function requestGitHub(username) {
   try {
     let url = 'https://github.com/' + username + '.gpg'
     let resp = await axios.get(url);
-    return resp;
+    return {
+      data: [resp.data]
+    };
   } catch (error) {
-    return error;
+    throw new Error(error.errno || error.response.status);
   }
 }
 
-router.get('/', async function (req, res, next) {
+router.get('/', function (req, res, next) {
   let [username, service, ...hostname] = req.hostname.split('.');
 
   if (hostname.join('.') !== process.env.PKS_HOSTNAME) {
@@ -27,9 +29,11 @@ router.get('/', async function (req, res, next) {
     );
   }
 
-  let serviceRes = await (serviceReqEnum[service])(username);
-
-  res.render('index', { title: 'Express' });
+  // https://github.com/expressjs/express/issues/2259 Express.js 5 will
+  // handle promise rejections
+  (serviceReqEnum[service])(username).then(
+    serviceRes => res.render('index', { title: serviceRes.data })
+  ).catch(next);
 });
 
 module.exports = router;
