@@ -1,10 +1,8 @@
 'use strict';
 
+require('dotenv').config();
+
 var express_app = require('./app');
 
-// Constants
-const PORT = 3000;
-const HOST = '0.0.0.0';
-
-express_app.listen(PORT, HOST);
-console.log(`Running on http://${HOST}:${PORT}`);
+express_app.listen(process.env.PORT, process.env.HOST);
+console.log(`Running on http://${process.env.HOST}:${process.env.PORT}`);
