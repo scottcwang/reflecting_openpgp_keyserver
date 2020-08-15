@@ -95,6 +95,13 @@ router.get('/', function (req, res, next) {
     );
   }
 
+  if (!req.query.search) {
+    next(new Error(
+      'Specify search query param'
+    ));
+    return;
+  }
+
   let search = req.query.search.toLowerCase();
 
   let searchHex;
