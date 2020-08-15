@@ -89,6 +89,17 @@ router.get('/', function (req, res, next) {
     );
   }
 
+  if (!['index', 'get'].includes(req.query.op)) {
+    throw new Error(
+      'Unrecognized op; must be index or get'
+    );
+  }
+
+  let search = req.query.search.toLowerCase();
+  if (search.startsWith('0x')) {
+    search = search.slice(2);
+  }
+
   // https://github.com/expressjs/express/issues/2259 Express.js 5 will
   // handle promise rejections
   (serviceReqEnum[service])(username).then(
