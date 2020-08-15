@@ -23,6 +23,24 @@ async function requestGitHub(username) {
   }
 }
 
+async function parseArmoredKey(keyString) {
+  readResult = await openpgp.key.readArmored(keyString);
+  keys = readResult.keys;
+
+  return await Promise.all(
+    keys.map(
+      async key => ({
+        userIds: key.getUserIds(),
+        keyId: key.getKeyId(),
+        algorithm: key.getAlgorithmInfo(),
+        isRevoked: await key.isRevoked(),
+        expirationTime: await key.getExpirationTime(),
+        creationTime: key.getCreationTime()
+      })
+    )
+  );
+}
+
 router.get('/', function (req, res, next) {
   let username;
   let service;
@@ -53,13 +71,17 @@ router.get('/', function (req, res, next) {
   // https://github.com/expressjs/express/issues/2259 Express.js 5 will
   // handle promise rejections
   (serviceReqEnum[service])(username).then(
-    serviceRes => Promise.all(serviceRes.data.map(openpgp.key.readArmored))
+    async serviceRes => (
+      await Promise.all(
+        serviceRes.data.map(parseArmoredKey)
+      )
+    ).flat()
   ).then(
     readResults => res.render(
       'index',
       {
         title: util.inspect(
-          readResults.map(readResult => readResult.keys),
+          readResults,
           { depth: 4 }
         )
       }
