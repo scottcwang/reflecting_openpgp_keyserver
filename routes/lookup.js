@@ -49,7 +49,9 @@ async function parseArmoredKey(keyString) {
     readResult.keys.map(
       async key => ({
         users: parseUsers(key),
-        keyId: key.getKeyId(),
+        keyIds: key.getKeyIds().map(
+          keyId => keyId.toHex()
+        ),
         algorithm: key.getAlgorithmInfo(),
         isRevoked: await key.isRevoked(),
         expirationTime: await key.getExpirationTime(),
