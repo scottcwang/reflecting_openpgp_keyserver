@@ -24,27 +24,31 @@ async function requestGitHub(username) {
   }
 }
 
+async function parseUsers(key) {
+  return Promise.all(
+    key.getUserIds().map(
+      async userId => {
+        let { selfCertification } = await key.getPrimaryUser(
+          undefined, userId
+        );
+        return {
+          userId: userId,
+          isRevoked: selfCertification.revoked,
+          expirationTime: selfCertification.getExpirationTime(),
+          creationTime: selfCertification.created
+        }
+      }
+    )
+  );
+}
+
 async function parseArmoredKey(keyString) {
   readResult = await openpgp.key.readArmored(keyString);
 
   return await Promise.all(
     readResult.keys.map(
       async key => ({
-        users: await Promise.all(
-          key.getUserIds().map(
-            async userId => {
-              let { selfCertification } = await key.getPrimaryUser(
-                undefined, userId
-              );
-              return {
-                userId: userId,
-                isRevoked: selfCertification.revoked,
-                expirationTime: selfCertification.getExpirationTime(),
-                creationTime: selfCertification.created
-              }
-            }
-          )
-        ),
+        users: parseUsers(key),
         keyId: key.getKeyId(),
         algorithm: key.getAlgorithmInfo(),
         isRevoked: await key.isRevoked(),
