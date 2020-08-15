@@ -24,7 +24,24 @@ async function requestGitHub(username) {
 }
 
 router.get('/', function (req, res, next) {
-  let [username, service, ...hostname] = req.hostname.split('.');
+  let username;
+  let service;
+  let hostname;
+
+  if (req.query.hasOwnProperty('username')) {
+    username = req.query.username;
+    if (req.query.hasOwnProperty('service')) {
+      service = req.query.service;
+      hostname = [req.hostname];
+    } else {
+      [service, ...hostname] = req.hostname.split('.')
+    }
+  } else if (req.query.hasOwnProperty('service')) {
+    service = req.query.service;
+    [username, ...hostname] = req.hostname.split('.')
+  } else {
+    [username, service, ...hostname] = req.hostname.split('.');
+  }
 
   if (hostname.join('.') !== process.env.PKS_HOSTNAME) {
     throw new Error(
