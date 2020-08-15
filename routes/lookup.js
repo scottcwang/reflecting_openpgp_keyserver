@@ -62,7 +62,7 @@ async function parseArmoredKey(keyString) {
   );
 }
 
-router.get('/', function (req, res, next) {
+router.get('/', async function (req, res, next) {
   let username;
   let service;
   let hostname;
@@ -83,16 +83,18 @@ router.get('/', function (req, res, next) {
   }
 
   if (hostname.join('.') !== process.env.PKS_HOSTNAME) {
-    throw new Error(
+    next(new Error(
       'Specify both username and service: <username>.<service>.'
       + process.env.PKS_HOSTNAME
-    );
+    ));
+    return;
   }
 
   if (!['index', 'get'].includes(req.query.op)) {
-    throw new Error(
+    next(new Error(
       'Unrecognized op; must be index or get'
-    );
+    ));
+    return;
   }
 
   if (!req.query.search) {
@@ -114,30 +116,32 @@ router.get('/', function (req, res, next) {
 
   // https://github.com/expressjs/express/issues/2259 Express.js 5 will
   // handle promise rejections
-  (serviceReqEnum[service])(username).then(
-    async serviceRes => (
-      await Promise.all(
-        serviceRes.data.map(parseArmoredKey)
-      )
-    ).flat()
-  ).then(
-    keys => keys.filter(
-      key => (
-        key.fingerprints.some(fingerprint => fingerprint.endsWith(searchHex))
-        || key.users.some(user => user.userId.includes(search))
-      )
+
+  let keys;
+  try {
+    let serviceRes = await ((serviceReqEnum[service])(username));
+    keys = await Promise.all(serviceRes.data.map(parseArmoredKey));
+  } catch (error) {
+    next(error);
+    return;
+  }
+
+  let filteredKeys = keys.flat().filter(
+    key => (
+      key.fingerprints.some(fingerprint => fingerprint.endsWith(searchHex))
+      || key.users.some(user => user.userId.includes(search))
     )
-  ).then(
-    readResults => res.render(
-      'index',
-      {
-        title: util.inspect(
-          readResults,
-          { depth: 4 }
-        )
-      }
-    )
-  ).catch(next);
+  );
+
+  res.render(
+    'index',
+    {
+      title: util.inspect(
+        filteredKeys,
+        { depth: 4 }
+      )
+    }
+  );
 
 });
 
