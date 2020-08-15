@@ -6,6 +6,7 @@ var router = express.Router();
 var axios = require('axios');
 
 var openpgp = require('openpgp');
+const { map } = require('../app');
 
 serviceReqEnum = Object.freeze({
   'github': requestGitHub
@@ -25,12 +26,25 @@ async function requestGitHub(username) {
 
 async function parseArmoredKey(keyString) {
   readResult = await openpgp.key.readArmored(keyString);
-  keys = readResult.keys;
 
   return await Promise.all(
-    keys.map(
+    readResult.keys.map(
       async key => ({
-        userIds: key.getUserIds(),
+        users: await Promise.all(
+          key.getUserIds().map(
+            async userId => {
+              let { selfCertification } = await key.getPrimaryUser(
+                undefined, userId
+              );
+              return {
+                userId: userId,
+                isRevoked: selfCertification.revoked,
+                expirationTime: selfCertification.getExpirationTime(),
+                creationTime: selfCertification.created
+              }
+            }
+          )
+        ),
         keyId: key.getKeyId(),
         algorithm: key.getAlgorithmInfo(),
         isRevoked: await key.isRevoked(),
