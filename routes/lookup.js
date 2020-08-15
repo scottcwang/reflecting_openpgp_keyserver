@@ -50,8 +50,8 @@ async function parseArmoredKey(keyString) {
       async key => ({
         key: key,
         users: await parseUsers(key),
-        keyIds: key.getKeyIds().map(
-          keyId => keyId.toHex().toLowerCase()
+        fingerprints: key.getKeys().map(
+          key => key.getFingerprint().toLowerCase()
         ),
         algorithm: key.getAlgorithmInfo(),
         isRevoked: await key.isRevoked(),
@@ -116,7 +116,7 @@ router.get('/', function (req, res, next) {
   ).then(
     keys => keys.filter(
       key => (
-        key.keyIds.includes(searchHex)
+        key.fingerprints.some(fingerprint => fingerprint.endsWith(searchHex))
         || key.users.some(user => user.userId.includes(search))
       )
     )
