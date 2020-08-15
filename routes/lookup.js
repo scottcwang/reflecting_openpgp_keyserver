@@ -36,10 +36,16 @@ router.get('/', function (req, res, next) {
   // https://github.com/expressjs/express/issues/2259 Express.js 5 will
   // handle promise rejections
   (serviceReqEnum[service])(username).then(
-    serviceRes => openpgp.key.readArmored(serviceRes.data)
+    serviceRes => Promise.all(serviceRes.data.map(openpgp.key.readArmored))
   ).then(
-    readResult => res.render(
-      'index', { title: util.inspect(readResult.keys, { depth: 4 }) }
+    readResults => res.render(
+      'index',
+      {
+        title: util.inspect(
+          readResults.map(readResult => readResult.keys),
+          { depth: 4 }
+        )
+      }
     )
   ).catch(next);
 
