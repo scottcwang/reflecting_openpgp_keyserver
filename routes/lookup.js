@@ -24,7 +24,7 @@ async function requestGitHub(username) {
   }
 }
 
-async function parseUsers(key) {
+function parseUsers(key) {
   return Promise.all(
     key.getUserIds().map(
       async userId => {
@@ -49,7 +49,7 @@ async function parseArmoredKey(keyString) {
     readResult.keys.map(
       async key => ({
         key: key,
-        users: parseUsers(key),
+        users: await parseUsers(key),
         keyIds: key.getKeyIds().map(
           keyId => keyId.toHex()
         ),
