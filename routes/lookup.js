@@ -1,7 +1,11 @@
+var util = require('util')
+
 var express = require('express');
 var router = express.Router();
 
 var axios = require('axios');
+
+var openpgp = require('openpgp');
 
 serviceReqEnum = Object.freeze({
   'github': requestGitHub
@@ -32,8 +36,13 @@ router.get('/', function (req, res, next) {
   // https://github.com/expressjs/express/issues/2259 Express.js 5 will
   // handle promise rejections
   (serviceReqEnum[service])(username).then(
-    serviceRes => res.render('index', { title: serviceRes.data })
+    serviceRes => openpgp.key.readArmored(serviceRes.data)
+  ).then(
+    readResult => res.render(
+      'index', { title: util.inspect(readResult.keys, { depth: 4 }) }
+    )
   ).catch(next);
+
 });
 
 module.exports = router;
