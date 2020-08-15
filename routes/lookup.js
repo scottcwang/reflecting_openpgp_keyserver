@@ -48,6 +48,7 @@ async function parseArmoredKey(keyString) {
   return await Promise.all(
     readResult.keys.map(
       async key => ({
+        key: key,
         users: parseUsers(key),
         keyIds: key.getKeyIds().map(
           keyId => keyId.toHex()
