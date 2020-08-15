@@ -109,6 +109,13 @@ router.get('/', function (req, res, next) {
       )
     ).flat()
   ).then(
+    keys => keys.filter(
+      key => (
+        key.keyIds.includes(search)
+        || key.users.some(user => user.userId.includes(search))
+      )
+    )
+  ).then(
     readResults => res.render(
       'index',
       {
