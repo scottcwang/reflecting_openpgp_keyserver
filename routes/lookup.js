@@ -51,7 +51,7 @@ async function parseArmoredKey(keyString) {
         key: key,
         users: await parseUsers(key),
         keyIds: key.getKeyIds().map(
-          keyId => keyId.toHex()
+          keyId => keyId.toHex().toLowerCase()
         ),
         algorithm: key.getAlgorithmInfo(),
         isRevoked: await key.isRevoked(),
@@ -96,8 +96,13 @@ router.get('/', function (req, res, next) {
   }
 
   let search = req.query.search.toLowerCase();
-  if (search.startsWith('0x')) {
-    search = search.slice(2);
+
+  let searchHex;
+  if (parseInt(search, 16)) {
+    let s = search.startsWith('0x') ? search.slice(2) : search;
+    if (s.length === 40 || s.length === 16) {
+      searchHex = s;
+    }
   }
 
   // https://github.com/expressjs/express/issues/2259 Express.js 5 will
@@ -111,7 +116,7 @@ router.get('/', function (req, res, next) {
   ).then(
     keys => keys.filter(
       key => (
-        key.keyIds.includes(search)
+        key.keyIds.includes(searchHex)
         || key.users.some(user => user.userId.includes(search))
       )
     )
