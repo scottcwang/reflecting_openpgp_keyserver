@@ -72,6 +72,31 @@ async function parseArmoredKey(keyString) {
   );
 }
 
+function mrIndexKey(keys) {
+  return keys.map(
+    key => [
+      "pub",
+      key.fingerprints[0].toUpperCase(),
+      key.algorithm,
+      key.bits,
+      Math.floor(key.creationTime.getTime() / 1000),
+      (
+        key.expirationTime !== Infinity
+          ? Math.floor(key.expirationTime.getTime() / 1000)
+          : ""
+      ),
+      (
+        (key.isRevoked ? "r" : "")
+        + (
+          key.expirationTime !== Infinity && key.expirationTime < new Date()
+            ? "e"
+            : ""
+        )
+      )
+    ].join(":")
+  ).join("\n");
+}
+
 router.get('/', async function (req, res, next) {
   let username;
   let service;
