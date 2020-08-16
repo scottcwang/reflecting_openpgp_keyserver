@@ -52,7 +52,18 @@ async function parseArmoredKey(keyString) {
         fingerprints: key.getKeys().map(
           key => key.getFingerprint().toLowerCase()
         ),
-        algorithm: key.getAlgorithmInfo(),
+        algorithm: openpgp.enums.write(
+          openpgp.enums.publicKey, key.getAlgorithmInfo().algorithm
+        ),
+        bits: (
+          key.getAlgorithmInfo().rsaBits
+            ? key.getAlgorithmInfo().rsaBits
+            : (
+              new openpgp.crypto.publicKey.elliptic.Curve(
+                key.getAlgorithmInfo().curve
+              )
+            ).payloadSize * 8
+        ),
         isRevoked: await key.isRevoked(),
         expirationTime: await key.getExpirationTime(),
         creationTime: key.getCreationTime()
