@@ -66,15 +66,15 @@ router.get('/', async function (req, res, next) {
   let service;
   let hostname;
 
-  if (req.query.hasOwnProperty('username')) {
+  if ('username' in req.query) {
     username = req.query.username;
-    if (req.query.hasOwnProperty('service')) {
+    if ('service' in req.query) {
       service = req.query.service;
       hostname = [req.hostname];
     } else {
       [service, ...hostname] = req.hostname.split('.');
     }
-  } else if (req.query.hasOwnProperty('service')) {
+  } else if ('service' in req.query) {
     service = req.query.service;
     [username, ...hostname] = req.hostname.split('.');
   } else {
