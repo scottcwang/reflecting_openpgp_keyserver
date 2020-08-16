@@ -72,6 +72,37 @@ async function parseArmoredKey(keyString) {
   );
 }
 
+function getCreationTime(obj) {
+  return Math.floor(obj.creationTime.getTime() / 1000);
+}
+
+function getExpirationTime(obj) {
+  return obj.expirationTime !== Infinity
+    ? Math.floor(obj.expirationTime.getTime() / 1000)
+    : "";
+}
+
+function getFlags(obj) {
+  return (obj.isRevoked ? "r" : "")
+    + (
+      obj.expirationTime !== Infinity && obj.expirationTime < new Date()
+        ? "e"
+        : ""
+    );
+}
+
+function mrIndexUser(users) {
+  return users.map(
+    user => [
+      "uid",
+      encodeURI(user.userId),
+      getCreationTime(user),
+      getExpirationTime(user),
+      getFlags(user)
+    ].join(":")
+  ).join("\n");
+}
+
 function mrIndexKey(keys) {
   return keys.map(
     key => [
@@ -79,21 +110,11 @@ function mrIndexKey(keys) {
       key.fingerprints[0].toUpperCase(),
       key.algorithm,
       key.bits,
-      Math.floor(key.creationTime.getTime() / 1000),
-      (
-        key.expirationTime !== Infinity
-          ? Math.floor(key.expirationTime.getTime() / 1000)
-          : ""
-      ),
-      (
-        (key.isRevoked ? "r" : "")
-        + (
-          key.expirationTime !== Infinity && key.expirationTime < new Date()
-            ? "e"
-            : ""
-        )
-      )
+      getCreationTime(key),
+      getExpirationTime(key),
+      getFlags(key)
     ].join(":")
+      + "\n" + mrIndexUser(key.users)
   ).join("\n");
 }
 
