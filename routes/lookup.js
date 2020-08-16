@@ -1,4 +1,4 @@
-var util = require('util')
+var util = require('util');
 
 var express = require('express');
 var router = express.Router();
@@ -8,13 +8,13 @@ var axios = require('axios');
 var openpgp = require('openpgp');
 const { map } = require('../app');
 
-serviceReqEnum = Object.freeze({
+const serviceReqEnum = Object.freeze({
   'github': requestGitHub
-})
+});
 
 async function requestGitHub(username) {
   try {
-    let url = 'https://github.com/' + username + '.gpg'
+    let url = 'https://github.com/' + username + '.gpg';
     let resp = await axios.get(url);
     return {
       data: [resp.data]
@@ -36,14 +36,14 @@ function parseUsers(key) {
           isRevoked: selfCertification.revoked,
           expirationTime: selfCertification.getExpirationTime(),
           creationTime: selfCertification.created
-        }
+        };
       }
     )
   );
 }
 
 async function parseArmoredKey(keyString) {
-  readResult = await openpgp.key.readArmored(keyString);
+  let readResult = await openpgp.key.readArmored(keyString);
 
   return await Promise.all(
     readResult.keys.map(
@@ -73,11 +73,11 @@ router.get('/', async function (req, res, next) {
       service = req.query.service;
       hostname = [req.hostname];
     } else {
-      [service, ...hostname] = req.hostname.split('.')
+      [service, ...hostname] = req.hostname.split('.');
     }
   } else if (req.query.hasOwnProperty('service')) {
     service = req.query.service;
-    [username, ...hostname] = req.hostname.split('.')
+    [username, ...hostname] = req.hostname.split('.');
   } else {
     [username, service, ...hostname] = req.hostname.split('.');
   }
