@@ -99,8 +99,8 @@ function mrIndexUser(users) {
       getCreationTime(user),
       getExpirationTime(user),
       getFlags(user)
-    ].join(":")
-  ).join("\n");
+    ].join(":") + "\n"
+  ).join("");
 }
 
 function mrIndexKey(keys) {
@@ -113,9 +113,9 @@ function mrIndexKey(keys) {
       getCreationTime(key),
       getExpirationTime(key),
       getFlags(key)
-    ].join(":")
-      + "\n" + mrIndexUser(key.users)
-  ).join("\n");
+    ].join(":") + "\n"
+      + mrIndexUser(key.users)
+  ).join("");
 }
 
 router.get('/', async function (req, res, next) {
