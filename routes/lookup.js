@@ -146,7 +146,8 @@ router.get('/', async function (req, res, next) {
     return;
   }
 
-  if (!['index', 'get'].includes(req.query.op)) {
+  let op = req.query.op;
+  if (!['index', 'get'].includes(op)) {
     next(new Error(
       'Unrecognized op; must be index or get'
     ));
@@ -189,15 +190,28 @@ router.get('/', async function (req, res, next) {
     )
   );
 
-  res.render(
-    'index',
-    {
-      title: util.inspect(
-        filteredKeys,
-        { depth: 4 }
-      )
-    }
-  );
+  if (op === 'index') {
+    res.set('Content-Type', 'text/plain');
+    res.write('info:1:' + filteredKeys.length + '\n');
+    res.write(mrIndexKey(filteredKeys));
+    res.send();
+    return;
+  }
+  else if (op === 'get') {
+    res.render(
+      'index',
+      {
+        title: util.inspect(
+          filteredKeys,
+          { depth: 10 }
+        )
+      }
+    );
+  } else {
+    next(new Error(
+      'Unrecognized op; must be index or get'
+    ));
+  }
 
 });
 
