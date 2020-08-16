@@ -163,6 +163,10 @@ router.get('/', async function (req, res, next) {
 
   let search = req.query.search.toLowerCase();
 
+  if (search === "*") {
+    search = "";
+  }
+
   let searchHex;
   if (parseInt(search, 16)) {
     let s = search.startsWith('0x') ? search.slice(2) : search;
