@@ -139,7 +139,7 @@ router.get('/', async function (req, res, next) {
   let filteredKeys = keys.flat().filter(
     key => (
       key.fingerprints.some(fingerprint => fingerprint.endsWith(searchHex))
-      || key.users.some(user => user.userId.includes(search))
+      || key.users.some(user => user.userId.toLowerCase().includes(search))
     )
   );
 
