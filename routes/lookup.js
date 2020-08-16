@@ -6,7 +6,6 @@ var router = express.Router();
 var axios = require('axios');
 
 var openpgp = require('openpgp');
-const { map } = require('../app');
 
 const serviceReqEnum = Object.freeze({
   'github': requestGitHub
