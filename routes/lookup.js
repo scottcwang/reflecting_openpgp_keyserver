@@ -202,11 +202,18 @@ router.get('/', async function (req, res, next) {
     return;
   }
   else if (op === 'get') {
+    let combinedPacketList = new openpgp.packet.List();
+    filteredKeys.forEach(
+      key => combinedPacketList.concat(key.key.toPacketlist())
+    );
+    let combinedKey = new openpgp.key.Key(combinedPacketList);
+    let armoredKey = combinedKey.armor();
+
     res.render(
       'index',
       {
         title: util.inspect(
-          filteredKeys,
+          armoredKey,
           { depth: 10 }
         )
       }
