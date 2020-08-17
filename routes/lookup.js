@@ -19,9 +19,22 @@ async function requestGitHub(username) {
       data: [resp.data]
     };
   } catch (error) {
+    if (error.response) {
+      if (error.response.status === 404) {
+        throw {
+          status: 404,
+          message: 'GitHub has no username ' + username
+        };
+      } else {
+        throw {
+          status: 502,
+          message: 'GitHub error: ' + error.toString()
+        };
+      }
+    }
     throw {
-      status: error.response ? 502 : 500,
-      message: error.toString()
+      status: 500,
+      message: 'Internal error: ' + error.toString()
     };
   }
 }
