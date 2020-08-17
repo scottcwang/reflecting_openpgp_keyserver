@@ -181,6 +181,13 @@ router.get('/', function (req, res, next) {
   // https://github.com/expressjs/express/issues/2259 Express.js 5 will
   // handle promise rejections
 
+  if (!(service in serviceReqEnum)) {
+    throw {
+      status: 501,
+      message: 'Service ' + service + ' not implemented'
+    };
+  }
+
   ((serviceReqEnum[service])(username)).then(
     serviceRes => Promise.all(serviceRes.data.map(parseArmoredKey))
   ).then(
