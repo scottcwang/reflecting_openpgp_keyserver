@@ -24,7 +24,14 @@ app.use('/pks/lookup', lookupRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-  next(createError(404));
+  next(createError(
+    501,
+    'This server implements the route /pks/lookup as per the OpenPGP HTTP '
+    + 'Keyserver Protocol. To look up <username>\'s GPG keys at <service>, '
+    + 'specify https://<username>.<service>.'
+    + process.env.PKS_HOSTNAME
+    + ' as the keyserver in an OpenPGP-compatible client.'
+  ));
 });
 
 // error handler
