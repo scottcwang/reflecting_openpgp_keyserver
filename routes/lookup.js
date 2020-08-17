@@ -118,7 +118,7 @@ function mrIndexKey(keys) {
   ).join("");
 }
 
-router.get('/', async function (req, res, next) {
+router.get('/', function (req, res, next) {
   let username;
   let service;
   let hostname;
@@ -139,26 +139,23 @@ router.get('/', async function (req, res, next) {
   }
 
   if (hostname.join('.') !== process.env.PKS_HOSTNAME) {
-    next(new Error(
+    throw new Error(
       'Specify both username and service: <username>.<service>.'
       + process.env.PKS_HOSTNAME
-    ));
-    return;
+    );
   }
 
   let op = req.query.op;
   if (!['index', 'get'].includes(op)) {
-    next(new Error(
+    throw new Error(
       'Unrecognized op; must be index or get'
-    ));
-    return;
+    );
   }
 
   if (!req.query.search) {
-    next(new Error(
+    throw new Error(
       'Specify search query param'
-    ));
-    return;
+    );
   }
 
   let search = req.query.search.toLowerCase();
@@ -178,46 +175,43 @@ router.get('/', async function (req, res, next) {
   // https://github.com/expressjs/express/issues/2259 Express.js 5 will
   // handle promise rejections
 
-  let keys;
-  try {
-    let serviceRes = await ((serviceReqEnum[service])(username));
-    keys = await Promise.all(serviceRes.data.map(parseArmoredKey));
-  } catch (error) {
-    next(error);
-    return;
-  }
+  ((serviceReqEnum[service])(username)).then(
+    serviceRes => Promise.all(serviceRes.data.map(parseArmoredKey))
+  ).then(
+    keys => {
+      let filteredKeys = keys.flat().filter(
+        key => (
+          key.fingerprints.some(fingerprint => fingerprint.endsWith(searchHex))
+          || key.users.some(user => user.userId.toLowerCase().includes(search))
+        )
+      );
 
-  let filteredKeys = keys.flat().filter(
-    key => (
-      key.fingerprints.some(fingerprint => fingerprint.endsWith(searchHex))
-      || key.users.some(user => user.userId.toLowerCase().includes(search))
-    )
-  );
+      if (op === 'index') {
+        res.set('Content-Type', 'text/plain');
+        res.write('info:1:' + filteredKeys.length + '\n');
+        res.write(mrIndexKey(filteredKeys));
+        res.send();
+        return;
+      }
+      else if (op === 'get') {
+        let combinedPacketList = new openpgp.packet.List();
+        filteredKeys.forEach(
+          key => combinedPacketList.concat(key.key.toPacketlist())
+        );
+        let combinedKey = new openpgp.key.Key(combinedPacketList);
+        let armoredKey = combinedKey.armor();
 
-  if (op === 'index') {
-    res.set('Content-Type', 'text/plain');
-    res.write('info:1:' + filteredKeys.length + '\n');
-    res.write(mrIndexKey(filteredKeys));
-    res.send();
-    return;
-  }
-  else if (op === 'get') {
-    let combinedPacketList = new openpgp.packet.List();
-    filteredKeys.forEach(
-      key => combinedPacketList.concat(key.key.toPacketlist())
-    );
-    let combinedKey = new openpgp.key.Key(combinedPacketList);
-    let armoredKey = combinedKey.armor();
-
-    res.set('Content-Type', 'application/pgp-keys');
-    res.write(armoredKey);
-    res.send();
-    return;
-  } else {
-    next(new Error(
-      'Unrecognized op; must be index or get'
-    ));
-  }
+        res.set('Content-Type', 'application/pgp-keys');
+        res.write(armoredKey);
+        res.send();
+        return;
+      } else {
+        throw new Error(
+          'Unrecognized op; must be index or get'
+        );
+      }
+    }
+  ).catch(next);
 
 });
 
