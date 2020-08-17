@@ -209,15 +209,10 @@ router.get('/', async function (req, res, next) {
     let combinedKey = new openpgp.key.Key(combinedPacketList);
     let armoredKey = combinedKey.armor();
 
-    res.render(
-      'index',
-      {
-        title: util.inspect(
-          armoredKey,
-          { depth: 10 }
-        )
-      }
-    );
+    res.set('Content-Type', 'application/pgp-keys');
+    res.write(armoredKey);
+    res.send();
+    return;
   } else {
     next(new Error(
       'Unrecognized op; must be index or get'
