@@ -19,7 +19,10 @@ async function requestGitHub(username) {
       data: [resp.data]
     };
   } catch (error) {
-    throw new Error(error.errno || error.response.status);
+    throw {
+      status: error.response ? 502 : 500,
+      message: error.toString()
+    };
   }
 }
 
@@ -139,23 +142,26 @@ router.get('/', function (req, res, next) {
   }
 
   if (hostname.join('.') !== process.env.PKS_HOSTNAME) {
-    throw new Error(
-      'Specify both username and service: <username>.<service>.'
-      + process.env.PKS_HOSTNAME
-    );
+    throw {
+      status: 400,
+      message: 'Specify both username and service: <username>.<service>.'
+        + process.env.PKS_HOSTNAME
+    };
   }
 
   let op = req.query.op;
   if (!['index', 'get'].includes(op)) {
-    throw new Error(
-      'Unrecognized op; must be index or get'
-    );
+    throw {
+      status: 501,
+      message: 'Unrecognized op; must be index or get'
+    };
   }
 
   if (!req.query.search) {
-    throw new Error(
-      'Specify search query param'
-    );
+    throw {
+      status: 400,
+      message: 'Specify search query param'
+    };
   }
 
   let search = req.query.search.toLowerCase();
@@ -206,9 +212,10 @@ router.get('/', function (req, res, next) {
         res.send();
         return;
       } else {
-        throw new Error(
-          'Unrecognized op; must be index or get'
-        );
+        throw {
+          status: 501,
+          message: 'Unrecognized op; must be index or get'
+        };
       }
     }
   ).catch(next);
