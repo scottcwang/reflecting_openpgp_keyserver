@@ -192,6 +192,13 @@ router.get('/', function (req, res, next) {
         )
       );
 
+      if (filteredKeys.length === 0) {
+        throw {
+          status: 404,
+          message: 'No keys found for ' + req.query.search
+        };
+      }
+
       if (op === 'index') {
         res.set('Content-Type', 'text/plain');
         res.write('info:1:' + filteredKeys.length + '\n');
