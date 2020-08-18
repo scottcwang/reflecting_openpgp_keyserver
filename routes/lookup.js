@@ -153,7 +153,9 @@ router.get('/', function (req, res, next) {
   } else {
     let username_service;
     [username_service, ...hostname] = req.hostname.split('.');
-    [username, service] = username_service.split('-');
+    let usernameServiceSplit = username_service.split('-');
+    username = usernameServiceSplit.slice(0, -1).join('-');
+    service = usernameServiceSplit[usernameServiceSplit.length - 1];
   }
 
   if (hostname.join('.') !== process.env.PKS_HOSTNAME) {
