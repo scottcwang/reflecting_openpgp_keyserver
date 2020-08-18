@@ -28,7 +28,7 @@ app.use(function (req, res, next) {
     501,
     'This server implements the route /pks/lookup as per the OpenPGP HTTP '
     + 'Keyserver Protocol. To look up <username>\'s GPG keys at <service>, '
-    + 'specify https://<username>.<service>.'
+    + 'specify https://<username>-<service>.'
     + process.env.PKS_HOSTNAME
     + ' as the keyserver in an OpenPGP-compatible client.'
   ));

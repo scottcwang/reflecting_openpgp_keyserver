@@ -151,13 +151,15 @@ router.get('/', function (req, res, next) {
     service = req.query.service;
     [username, ...hostname] = req.hostname.split('.');
   } else {
-    [username, service, ...hostname] = req.hostname.split('.');
+    let username_service;
+    [username_service, ...hostname] = req.hostname.split('.');
+    [username, service] = username_service.split('-');
   }
 
   if (hostname.join('.') !== process.env.PKS_HOSTNAME) {
     throw {
       status: 400,
-      message: 'Specify both username and service: <username>.<service>.'
+      message: 'Specify both username and service: <username>-<service>.'
         + process.env.PKS_HOSTNAME
     };
   }
