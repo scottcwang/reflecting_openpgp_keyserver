@@ -1,68 +1,78 @@
-# Try Out Development Containers: Node.js
+# reflecting-openpgp-keyserver
 
-This is a sample project that lets you try out the **[VS Code Remote - Containers](https://aka.ms/vscode-remote/containers)** extension in a few easy steps.
+This is an API, served from ExpressJS on Node.js, that reflects users'
+OpenPGP keys from version control system hosting services.
 
-> **Note:** If you're following the quick start, you can jump to the [Things to try](#things-to-try) section.
+Currently, [user keys on GitHub](https://docs.github.com/en/github/authenticating-to-github/managing-commit-signature-verification)
+are supported. To load &lt;username>'s keys on GitHub, specify
 
-## Setting up the development container
+```
+https://<username>-github.reflecting-openpgp-keyserver.duckdns.org
+```
 
-Follow these steps to open this sample in a container:
+as the keyserver address in your OpenPGP-compatible client. For example, here
+are my keys:
 
-1. If this is your first time using a development container, please follow the [getting started steps](https://aka.ms/vscode-remote/containers/getting-started).
+```
+$ gpg --keyserver https://scottcwang-github.reflecting-openpgp-keyserver.duckdns.org --search-keys wang
+gpg: data source: https://scottcwang-github.reflecting-openpgp-keyserver.duckdns.org:443
+(1)     Scott C Wang <wangsc@cs.wisc.edu>
+          4096 bit RSA key 8D368D366BEA0168, created: 2020-08-13, expires: 2020-08-20
+(2)     Scott C Wang <scottcwang@users.noreply.github.com>
+          256 bit EDDSA key 329716271E38BFB9, created: 2020-08-13
+Keys 1-2 of 2 for "wang".  Enter number(s), N)ext, or Q)uit > 1
+gpg: key 8D368D366BEA0168: public key "wangsc@cs.wisc.edu>" imported
+gpg: no ultimately trusted keys found
+gpg: Total number processed: 1
+gpg:               imported: 1
+```
 
-2. To use this repository, you can either open the repository in an isolated Docker volume:
+## Why?
 
-    - Press <kbd>F1</kbd> and select the **Remote-Containers: Try a Sample...** command.
-    - Choose the "Node" sample, wait for the container to start and try things out!
-        > **Note:** Under the hood, this will use **Remote-Containers: Open Repository in Container...** command to clone the source code in a Docker volume instead of the local filesystem.
+In a version control system, OpenPGP keys facilitate:
 
-    Or open a locally cloned copy of the code:
+* Encrypted communication about security issues
+* Validation of commit signatures
+* Validation of package signatures on downloaded releases
+* Verification of maintaners' email addresses and other contact details
 
-   - Clone this repository to your local filesystem.
-   - Press <kbd>F1</kbd> and select the **Remote-Containers: Open Folder in Container...** command.
-   - Select the cloned copy of this folder, wait for the container to start, and try things out!
-## Things to try
+Managing OpenPGP keys through separate keyservers causes issues:
 
-Once you have this sample opened in a container, you'll be able to work with it like you would locally.
+* Using a separate keyserver presents a maintenance burden, which foments the
+  insecure practice of using long-lived keys
+* Many keyservers don't verify the User ID packets in the keys they host, so
+  can't be trusted
+* Many keyservers allow the world to add signature packets to a key, which
+  invites key poisoning abuse
+* A fingerprint posted in a project's security policy document isn't readily
+  machine-readable
 
-> **Note:** This container runs as a non-root user with sudo access by default. Comment out `"remoteUser": "node"` in `.devcontainer/devcontainer.json` if you'd prefer to run as root.
+Consequently, a better solution is to manage OpenPGP keys using the version
+control system. However, it's tedious to have to `curl` keys from a
+version control system hosting service, then import them manually into an
+OpenPGP client.
 
-Some things to try:
+`reflecting-openpgp-keyserver` makes it easy to find and use the publicly
+available, verified keys of a known user on a version control system
+hosting service.
 
-1. **Edit:**
-   - Open `server.js`
-   - Try adding some code and check out the language features. Notice that `eslint` and the `vscode-eslint` extension are already installed in the container.
-2. **Terminal:** Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>\`</kbd> and type `uname` and other Linux commands from the terminal window.
-3. **Build, Run, and Debug:**
-   - Open `server.js`
-   - Add a breakpoint (e.g. on line 20).
-   - Press <kbd>F5</kbd> to launch the app in the container.
-   - Once the breakpoint is hit, try hovering over variables, examining locals, and more.
-   - Continue, then open a local browser and go to `http://localhost:3000` and note you can connect to the server in the container.
-4. **Forward another port:**
-   - Stop debugging and remove the breakpoint.
-   - Open `server.js`
-   - Change the server port to 5000. (`const PORT = 5000;`)
-   - Press <kbd>F5</kbd> to launch the app in the container.
-   - Press <kbd>F1</kbd> and run the **Forward a Port** command.
-   - Select port 5000.
-   - Click "Open Browser" in the notification that appears to access the web app on this new port.
+## Specification
 
-## Contributing
+This API exposes the `GET /pks/lookup` endpoint specified by the
+[HTTP Keyserver Protocol](https://tools.ietf.org/html/draft-shaw-openpgp-hkp-00):
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.microsoft.com.
+* The `op` query variable may be either `get` or `index`
+* The `search` variable may be one of:
+  * a hexadecimal key ID (16 bytes), optionally preceded by `0x`
+  * a fingerprint (40 bytes), optionally preceded by `0x`
+  * a string (returns keys where the user ID string contains this string)
+  * `*` (returns all keys)
+* The `option` variable is always assumed to be `mr` (machine-readable output)
+* The `fingerprint` variable is always assumed to be `on`
+* The `exact` variable is always ignored
 
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
+Commits created through the GitHub web interface are signed by the
+key of the hardcoded `web-flow` user, which is accessible as the key with
+fingerprint `4AEE18F83AFDEB23` at
+`web-flow-github.reflecting-openpgp-keyserver.duckdns.org`.
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-## License
-
-Copyright © Microsoft Corporation All rights reserved.<br />
-Licensed under the MIT License. See LICENSE in the project root for license information.
