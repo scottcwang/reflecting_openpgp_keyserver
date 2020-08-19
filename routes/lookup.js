@@ -43,15 +43,24 @@ function parseUsers(key) {
   return Promise.all(
     key.getUserIds().map(
       async userId => {
-        let { selfCertification } = await key.getPrimaryUser(
-          undefined, userId
-        );
-        return {
-          userId: userId,
-          isRevoked: selfCertification.revoked,
-          expirationTime: selfCertification.getExpirationTime(),
-          creationTime: selfCertification.created
-        };
+        try {
+          let { selfCertification } = await key.getPrimaryUser(
+            undefined, userId
+          );
+          return {
+            userId: userId,
+            isRevoked: selfCertification.revoked,
+            expirationTime: selfCertification.getExpirationTime(),
+            creationTime: selfCertification.created
+          };
+        } catch (error) {
+          return {
+            userId: userId,
+            isRevoked: false,
+            expirationTime: Infinity,
+            creationTime: NaN
+          };
+        }
       }
     )
   );
@@ -80,8 +89,8 @@ async function parseArmoredKey(keyString) {
               )
             ).payloadSize * 8
         ),
-        isRevoked: await key.isRevoked(),
-        expirationTime: await key.getExpirationTime(),
+        isRevoked: await key.isRevoked().catch(error => false),
+        expirationTime: await key.getExpirationTime().catch(error => Infinity),
         creationTime: key.getCreationTime()
       })
     )
@@ -89,7 +98,9 @@ async function parseArmoredKey(keyString) {
 }
 
 function getCreationTime(obj) {
-  return Math.floor(obj.creationTime.getTime() / 1000);
+  return !isNaN(obj.creationTime)
+    ? Math.floor(obj.creationTime.getTime() / 1000)
+    : "";
 }
 
 function getExpirationTime(obj) {
