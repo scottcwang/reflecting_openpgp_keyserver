@@ -22,6 +22,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/pks/lookup', lookupRouter);
 
+app.use('/', function (req, res, next) {
+  res.status(301);
+  res.setHeader(
+    'Location',
+    'https://github.com/scottcwang/reflecting_openpgp_keyserver'
+  );
+  res.send();
+});
+
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(
